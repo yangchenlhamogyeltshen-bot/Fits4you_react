@@ -1,45 +1,63 @@
 import { useEffect, useState } from 'react';
-import { Text, View, Button, StyleSheet } from 'react-native';
-import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
+import { ActivityIndicator, View } from 'react-native';
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { SQLiteProvider } from 'expo-sqlite';
+import { onAuthStateChanged } from 'firebase/auth';
+import { auth } from './src/firebase';
 import { initDatabase } from './src/database/db';
+import LoginScreen from './src/screens/LoginScreen';
+import HomeScreen from './src/screens/HomeScreen';
+import ClosetScreen from './src/screens/ClosetScreen';
+import AddItemScreen from './src/screens/AddItemScreen';
 
-function TestScreen() {
-  const db = useSQLiteContext();
-  const [count, setCount] = useState(0);
+const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
-  const load = async () => {
-    const row = await db.getFirstAsync('SELECT COUNT(*) AS n FROM modern_items');
-    setCount(row.n);
-  };
-
-  const addTestItem = async () => {
-    await db.runAsync(
-      'INSERT INTO modern_items (user_id, name, category, added_on) VALUES (?, ?, ?, ?)',
-      ['test-user', 'Test shirt', 'Tops', Date.now()]
-    );
-    load();
-  };
-
-  useEffect(() => { load(); }, []);
-
+function MainTabs() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>FitsForYou</Text>
-      <Text>Items in SQLite: {count}</Text>
-      <Button title="Add test item" onPress={addTestItem} />
-    </View>
+    <Tab.Navigator>
+      <Tab.Screen name="Home" component={HomeScreen} />
+      <Tab.Screen name="Closet" component={ClosetScreen} />
+    </Tab.Navigator>
   );
 }
 
-export default function App() {
+function MainApp() {
   return (
     <SQLiteProvider databaseName="fitsforyou.db" onInit={initDatabase}>
-      <TestScreen />
+      <NavigationContainer>
+        <Stack.Navigator>
+          <Stack.Screen name="Tabs" component={MainTabs} options={{ headerShown: false }} />
+          <Stack.Screen name="AddItem" component={AddItemScreen} options={{ title: 'Add clothing' }} />
+        </Stack.Navigator>
+      </NavigationContainer>
     </SQLiteProvider>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 12 },
-  title: { fontSize: 28, fontWeight: 'bold' },
-});
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [checking, setChecking] = useState(true);
+
+  useEffect(() => {
+    return onAuthStateChanged(auth, (u) => {
+      console.log('AUTH STATE', u ? u.email : 'no user');
+      setUser(u);
+      setChecking(false);
+    });
+  }, []);
+
+  if (checking) {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center' }}>
+        <ActivityIndicator size="large" />
+      </View>
+    );
+  }
+
+  // Two separate top-level screens: no navigator is switched while it is showing
+  if (!user) return <LoginScreen />;
+  return <MainApp />;
+}
