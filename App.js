@@ -11,6 +11,7 @@ import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ClosetScreen from './src/screens/ClosetScreen';
 import AddItemScreen from './src/screens/AddItemScreen';
+import AddTraditionalScreen from './src/screens/AddTraditionalScreen';
 
 const Stack = createNativeStackNavigator();
 const Tab = createBottomTabNavigator();
@@ -31,6 +32,7 @@ function MainApp() {
         <Stack.Navigator>
           <Stack.Screen name="Tabs" component={MainTabs} options={{ headerShown: false }} />
           <Stack.Screen name="AddItem" component={AddItemScreen} options={{ title: 'Add clothing' }} />
+          <Stack.Screen name="AddTraditional" component={AddTraditionalScreen} options={{ title: 'Add traditional wear' }} />
         </Stack.Navigator>
       </NavigationContainer>
     </SQLiteProvider>

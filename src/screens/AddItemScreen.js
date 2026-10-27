@@ -45,10 +45,12 @@ export default function AddItemScreen({ navigation }) {
   };
 
   const save = async () => {
+    const uid = auth.currentUser?.uid;
+    if (!uid) return;
     if (!name.trim()) return Alert.alert('Please enter a name');
-    await addItem(db, auth.currentUser.uid, { name: name.trim(), category, color: color.trim(), season, warmth, imageUri });
+    await addItem(db, uid, { name: name.trim(), category, color: color.trim(), season, warmth, imageUri });
     navigation.goBack();
-  };
+};
 
   return (
     <ScrollView contentContainerStyle={styles.container}>
