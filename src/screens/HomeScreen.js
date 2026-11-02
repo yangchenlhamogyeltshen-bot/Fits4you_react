@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { colors, shadow } from '../theme';
 import { View, Text, TextInput, TouchableOpacity, ScrollView, Alert, StyleSheet } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
@@ -110,18 +111,18 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 10 },
-  hello: { fontSize: 18, fontWeight: 'bold' },
-  heading: { fontSize: 18, fontWeight: 'bold', marginTop: 8 },
-  card: { borderWidth: 1, borderColor: '#ddd', borderRadius: 10, padding: 12, gap: 4 },
-  weather: { fontSize: 16 },
-  input: { borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 8, marginTop: 6 },
-  muted: { color: '#777' },
-  bold: { fontWeight: 'bold' },
-  button: { backgroundColor: '#5b2a86', padding: 10, borderRadius: 8, alignItems: 'center', marginTop: 8 },
+  container: { padding: 16, gap: 12, backgroundColor: colors.bg },
+  hello: { fontSize: 18, fontWeight: 'bold', color: colors.text },
+  heading: { fontSize: 20, fontWeight: 'bold', marginTop: 10, color: colors.primary },
+  card: { backgroundColor: colors.card, borderRadius: 16, padding: 14, gap: 4, ...shadow },
+  weather: { fontSize: 17, color: colors.text },
+  input: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, padding: 10, marginTop: 8, backgroundColor: colors.bg },
+  muted: { color: colors.muted },
+  bold: { fontWeight: 'bold', fontSize: 16, color: colors.text },
+  button: { backgroundColor: colors.primary, padding: 12, borderRadius: 12, alignItems: 'center', marginTop: 10 },
   buttonText: { color: '#fff', fontWeight: 'bold' },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { borderWidth: 1, borderColor: '#bbb', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
-  chipActive: { backgroundColor: '#5b2a86', borderColor: '#5b2a86' },
-  logout: { color: '#5b2a86', textAlign: 'center', marginTop: 16 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  logout: { color: colors.primary, textAlign: 'center', marginTop: 20, fontWeight: '600' },
 });

@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { colors, shadow } from '../theme';
 import { View, Text, TextInput, FlatList, Image, TouchableOpacity, Alert, ScrollView, StyleSheet } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
@@ -93,17 +94,17 @@ export default function ClosetScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, padding: 12 },
-  switchRow: { flexDirection: 'row', marginBottom: 8, borderWidth: 1, borderColor: '#5b2a86', borderRadius: 8, overflow: 'hidden' },
-  switchBtn: { flex: 1, alignItems: 'center', paddingVertical: 8 },
-  switchActive: { backgroundColor: '#5b2a86' },
-  search: { borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 10, marginBottom: 8 },
-  chip: { borderWidth: 1, borderColor: '#bbb', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6, marginRight: 6, height: 34 },
-  chipActive: { backgroundColor: '#5b2a86', borderColor: '#5b2a86' },
-  row: { flexDirection: 'row', gap: 12, paddingVertical: 10, alignItems: 'center', borderBottomWidth: 1, borderColor: '#eee' },
-  photo: { width: 56, height: 56, borderRadius: 8, backgroundColor: '#ddd' },
-  name: { fontWeight: 'bold', fontSize: 16 },
-  empty: { textAlign: 'center', marginTop: 40, color: '#777' },
-  fab: { position: 'absolute', right: 20, bottom: 20, width: 56, height: 56, borderRadius: 28, backgroundColor: '#5b2a86', alignItems: 'center', justifyContent: 'center' },
+  container: { flex: 1, padding: 14, backgroundColor: colors.bg },
+  switchRow: { flexDirection: 'row', marginBottom: 10, backgroundColor: colors.primaryLight, borderRadius: 12, padding: 4 },
+  switchBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10 },
+  switchActive: { backgroundColor: colors.primary },
+  search: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, borderRadius: 12, padding: 12, marginBottom: 10 },
+  chip: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, marginRight: 8, height: 36 },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  row: { flexDirection: 'row', gap: 14, padding: 12, marginTop: 10, alignItems: 'center', backgroundColor: colors.card, borderRadius: 16, ...shadow },
+  photo: { width: 64, height: 64, borderRadius: 12, backgroundColor: colors.primaryLight },
+  name: { fontWeight: 'bold', fontSize: 16, color: colors.text },
+  empty: { textAlign: 'center', marginTop: 50, color: colors.muted },
+  fab: { position: 'absolute', right: 20, bottom: 20, width: 58, height: 58, borderRadius: 29, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadow },
   fabText: { color: '#fff', fontSize: 30, lineHeight: 34 },
 });

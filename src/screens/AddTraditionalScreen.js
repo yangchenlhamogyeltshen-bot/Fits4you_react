@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { colors, shadow } from '../theme';
 import { View, Text, TextInput, Image, TouchableOpacity, Alert, ScrollView, StyleSheet } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import { useSQLiteContext } from 'expo-sqlite';
@@ -70,13 +71,13 @@ export default function AddTraditionalScreen({ navigation }) {
 }
 
 const styles = StyleSheet.create({
-  container: { padding: 16, gap: 10 },
-  input: { borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12 },
-  label: { fontWeight: 'bold', marginTop: 6, marginBottom: 4 },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  chip: { borderWidth: 1, borderColor: '#bbb', borderRadius: 16, paddingHorizontal: 12, paddingVertical: 6 },
-  chipActive: { backgroundColor: '#5b2a86', borderColor: '#5b2a86' },
-  preview: { width: 140, height: 140, borderRadius: 10, alignSelf: 'center' },
-  button: { backgroundColor: '#5b2a86', padding: 14, borderRadius: 8, alignItems: 'center', marginTop: 10 },
-  buttonText: { color: '#fff', fontWeight: 'bold' },
+  container: { padding: 16, gap: 12, backgroundColor: colors.bg },
+  input: { borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, backgroundColor: colors.card },
+  label: { fontWeight: 'bold', marginTop: 8, marginBottom: 6, color: colors.text },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  chip: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 8 },
+  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
+  preview: { width: 150, height: 150, borderRadius: 16, alignSelf: 'center' },
+  button: { backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center', marginTop: 14, ...shadow },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
 });

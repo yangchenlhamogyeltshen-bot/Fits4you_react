@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { colors, shadow } from '../theme';
 import { View, Text, TextInput, TouchableOpacity, Alert, StyleSheet } from 'react-native';
 import {
   signInWithEmailAndPassword,
@@ -65,10 +66,10 @@ export default function LoginScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, justifyContent: 'center', padding: 24, gap: 12 },
-  title: { fontSize: 32, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 },
-  input: { borderWidth: 1, borderColor: '#bbb', borderRadius: 8, padding: 12 },
-  button: { backgroundColor: '#5b2a86', padding: 14, borderRadius: 8, alignItems: 'center' },
-  buttonText: { color: '#fff', fontWeight: 'bold' },
-  link: { color: '#5b2a86', textAlign: 'center', marginTop: 4 },
+  container: { flex: 1, justifyContent: 'center', padding: 28, gap: 14, backgroundColor: colors.bg },
+  title: { fontSize: 38, fontWeight: 'bold', textAlign: 'center', marginBottom: 20, color: colors.primary },
+  input: { borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 14, backgroundColor: colors.card, color: colors.text },
+  button: { backgroundColor: colors.primary, padding: 16, borderRadius: 12, alignItems: 'center', ...shadow },
+  buttonText: { color: '#fff', fontWeight: 'bold', fontSize: 16 },
+  link: { color: colors.primary, textAlign: 'center', marginTop: 6, fontWeight: '600' },
 });
