@@ -1,15 +1,17 @@
 import { useState, useCallback } from 'react';
-import { colors, shadow } from '../theme';
-import { View, Text, TextInput, FlatList, Image, TouchableOpacity, Alert, ScrollView, StyleSheet } from 'react-native';
+import { View, FlatList, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { auth } from '../firebase';
 import { getItems, deleteItem } from '../database/clothingDao';
 import { getTraditional, deleteTraditional } from '../database/traditionalDao';
-
-export const CATEGORIES = ['Tops', 'Bottoms', 'Dresses', 'Outerwear', 'Shoes', 'Accessories'];
+import { CATEGORIES } from '../constants';
+import { Screen, Header, Txt, SearchBar, Chip, ItemCard, EmptyState } from '../components/UI';
+import { useTheme } from '../theme';
 
 export default function ClosetScreen({ navigation }) {
+  const { colors } = useTheme();
   const db = useSQLiteContext();
   const [wardrobe, setWardrobe] = useState('Modern'); // 'Modern' or 'Traditional'
   const [items, setItems] = useState([]);
@@ -42,69 +44,81 @@ export default function ClosetScreen({ navigation }) {
     ]);
   };
 
+  const showDetails = (item) => {
+    const lines = isModern
+      ? `${item.category} · ${item.color || 'No colour'} · ${item.season}\nWarmth ${item.warmth}/5 · worn ${item.times_worn} times`
+      : `${item.piece_type} · ${item.fabric || 'No fabric'} · ${item.occasion}\nWarmth ${item.warmth}/5 · worn ${item.times_worn} times`;
+    Alert.alert(item.name, lines, [
+      { text: 'Close', style: 'cancel' },
+      { text: 'Delete', style: 'destructive', onPress: () => confirmDelete(item) },
+    ]);
+  };
+
   return (
-    <View style={styles.container}>
-      <View style={styles.switchRow}>
-        {['Modern', 'Traditional'].map((w) => (
-          <TouchableOpacity key={w} onPress={() => { setWardrobe(w); setItems([]); }}
-            style={[styles.switchBtn, wardrobe === w && styles.switchActive]}>
-            <Text style={wardrobe === w && { color: '#fff', fontWeight: 'bold' }}>{w}</Text>
-          </TouchableOpacity>
-        ))}
-      </View>
+    <Screen>
+      <Header title="My Wardrobe" subtitle={`${items.length} ${items.length === 1 ? 'piece' : 'pieces'}`} />
 
-      <TextInput style={styles.search} placeholder="Search clothes..." value={search} onChangeText={setSearch} />
-
-      {isModern && (
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
-          {['All', ...CATEGORIES].map((c) => (
-            <TouchableOpacity key={c} onPress={() => setCategory(c)}
-              style={[styles.chip, category === c && styles.chipActive]}>
-              <Text style={category === c && { color: '#fff' }}>{c}</Text>
+      <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
+        {/* Modern / Traditional switch */}
+        <View style={{ flexDirection: 'row', backgroundColor: colors.primaryContainer, borderRadius: 24, padding: 4, marginBottom: 12 }}>
+          {['Modern', 'Traditional'].map((w) => (
+            <TouchableOpacity
+              key={w}
+              onPress={() => { setWardrobe(w); setItems([]); }}
+              style={{
+                flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 20,
+                backgroundColor: wardrobe === w ? colors.primary : 'transparent',
+              }}
+            >
+              <Txt bold color={wardrobe === w ? '#fff' : colors.primary}>{w}</Txt>
             </TouchableOpacity>
           ))}
-        </ScrollView>
-      )}
+        </View>
+
+        <SearchBar value={search} onChangeText={setSearch} placeholder="Search clothes..." />
+
+        {isModern && (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: 12 }}>
+            {['All', ...CATEGORIES].map((c) => (
+              <Chip key={c} label={c} active={category === c} onPress={() => setCategory(c)} />
+            ))}
+          </ScrollView>
+        )}
+      </View>
 
       <FlatList
         data={items}
+        numColumns={2}
         keyExtractor={(i) => String(i.id)}
-        ListEmptyComponent={<Text style={styles.empty}>Nothing here yet. Tap + to add one.</Text>}
+        columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 16 }}
+        contentContainerStyle={{ paddingTop: 14, paddingBottom: 110 }}
+        ListEmptyComponent={
+          <EmptyState
+            title="Nothing here yet"
+            text="Tap the + button to add your first piece."
+          />
+        }
         renderItem={({ item }) => (
-          <TouchableOpacity style={styles.row} onLongPress={() => confirmDelete(item)}>
-            {item.image_uri ? <Image source={{ uri: item.image_uri }} style={styles.photo} /> : <View style={styles.photo} />}
-            <View style={{ flex: 1 }}>
-              <Text style={styles.name}>{item.name}</Text>
-              <Text>
-                {isModern
-                  ? `${item.category} · ${item.color} · ${item.season}`
-                  : `${item.piece_type} · ${item.fabric} · ${item.occasion}`}
-              </Text>
-            </View>
-          </TouchableOpacity>
+          <ItemCard
+            title={item.name}
+            subtitle={isModern ? `${item.category} · ${item.color || '-'}` : `${item.piece_type} · ${item.occasion}`}
+            uri={item.image_uri}
+            essential={isModern && item.is_capsule === 1}
+            onPress={() => showDetails(item)}
+            onLongPress={() => confirmDelete(item)}
+          />
         )}
       />
 
-      <TouchableOpacity style={styles.fab}
-        onPress={() => navigation.navigate(isModern ? 'AddItem' : 'AddTraditional')}>
-        <Text style={styles.fabText}>+</Text>
+      <TouchableOpacity
+        onPress={() => navigation.navigate(isModern ? 'AddItem' : 'AddTraditional')}
+        style={{
+          position: 'absolute', right: 20, bottom: 20, width: 60, height: 60, borderRadius: 30,
+          backgroundColor: colors.secondary, alignItems: 'center', justifyContent: 'center', elevation: 6,
+        }}
+      >
+        <Ionicons name="add" size={32} color={colors.onSecondary} />
       </TouchableOpacity>
-    </View>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, padding: 14, backgroundColor: colors.bg },
-  switchRow: { flexDirection: 'row', marginBottom: 10, backgroundColor: colors.primaryLight, borderRadius: 12, padding: 4 },
-  switchBtn: { flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 10 },
-  switchActive: { backgroundColor: colors.primary },
-  search: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, borderRadius: 12, padding: 12, marginBottom: 10 },
-  chip: { borderWidth: 1, borderColor: colors.border, backgroundColor: colors.card, borderRadius: 20, paddingHorizontal: 14, paddingVertical: 7, marginRight: 8, height: 36 },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  row: { flexDirection: 'row', gap: 14, padding: 12, marginTop: 10, alignItems: 'center', backgroundColor: colors.card, borderRadius: 16, ...shadow },
-  photo: { width: 64, height: 64, borderRadius: 12, backgroundColor: colors.primaryLight },
-  name: { fontWeight: 'bold', fontSize: 16, color: colors.text },
-  empty: { textAlign: 'center', marginTop: 50, color: colors.muted },
-  fab: { position: 'absolute', right: 20, bottom: 20, width: 58, height: 58, borderRadius: 29, backgroundColor: colors.primary, alignItems: 'center', justifyContent: 'center', ...shadow },
-  fabText: { color: '#fff', fontSize: 30, lineHeight: 34 },
-});
