@@ -10,25 +10,18 @@
       "supportsTablet": true
     },
     "android": {
+      "package": "com.fitsforyou.app",
+    
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
-      },
-      "package": "com.fitsforyou.app"
+        "backgroundColor": "#000000"
+      }
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite",
-      "expo-status-bar"
-    ],
-    "extra": {
-      "eas": {
-        "projectId": "88b8928f-1feb-4a65-ab85-4ec85fcdf95a"
-      }
-    }
+      "expo-sqlite"
+    ]
   }
 }

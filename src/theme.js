@@ -1,25 +1,53 @@
-// Same palette as the Android app (res/values/colors.xml)
-export const colors = {
-  primary: '#4A2545',
-  primaryDark: '#331A2F',
-  primaryContainer: '#EFE0EC',
+import { createContext, useContext, useEffect, useState } from 'react';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+
+// Light mode: soft white page, light-grey tiles, black buttons, blue highlights
+export const lightColors = {
+  primary: '#111111',
+  primaryDark: '#000000',
+  primaryContainer: '#E9E9EC',
   onPrimary: '#FFFFFF',
-  secondary: '#FF6F61',
-  secondaryContainer: '#FFE1DC',
-  onSecondary: '#4A2545',
-  accent: '#F4B942',
-  accentContainer: '#FDF0D5',
-  bg: '#FBF7F2',
+  secondary: '#1F6FEB',
+  secondaryContainer: '#1F6FEB',
+  onSecondary: '#FFFFFF',
+  accent: '#F5A524',
+  accentContainer: '#FFF1D6',
+  accentText: '#8A5A00',
+  bg: '#FAFAFA',
   surface: '#FFFFFF',
-  card: '#FFFFFF',
-  text: '#2A1F28',
-  muted: '#8C7E88',
-  border: '#E8DFE5',
-  error: '#C0392B',
-  scrim: 'rgba(74,37,69,0.62)',
+  card: '#F1F1F3',
+  text: '#111111',
+  muted: '#8A8A90',
+  border: '#DADADD',
+  error: '#D93025',
+  scrim: 'rgba(0,0,0,0.55)',
 };
 
-// Same corner sizes as the Android dimens.xml
+// Dark mode: near-black page, dark-grey tiles, white buttons, blue highlights
+export const darkColors = {
+  primary: '#FFFFFF',
+  primaryDark: '#E5E5E5',
+  primaryContainer: '#2A2A2D',
+  onPrimary: '#111111',
+  secondary: '#2F7DF0',
+  secondaryContainer: '#2F7DF0',
+  onSecondary: '#FFFFFF',
+  accent: '#F5A524',
+  accentContainer: '#3A2D12',
+  accentText: '#F5A524',
+  bg: '#0F0F10',
+  surface: '#141415',
+  card: '#1E1E20',
+  text: '#F5F5F5',
+  muted: '#9B9BA1',
+  border: '#2E2E31',
+  error: '#FF6B5E',
+  scrim: 'rgba(0,0,0,0.6)',
+};
+
+// Kept so older imports still work (this one is always the light palette)
+export const colors = lightColors;
+
 export const radius = { card: 20, cardSmall: 12, cardLarge: 28, button: 28, input: 16 };
 
 export const shadow = {
@@ -30,5 +58,31 @@ export const shadow = {
   elevation: 3,
 };
 
+const ThemeContext = createContext({ colors: lightColors, dark: false, setDark: () => {} });
+
+export function ThemeProvider({ children }) {
+  const [dark, setDarkState] = useState(false);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const v = await AsyncStorage.getItem('fy_dark');
+        if (v === '1') setDarkState(true);
+      } catch {}
+    })();
+  }, []);
+
+  const setDark = (v) => {
+    setDarkState(v);
+    AsyncStorage.setItem('fy_dark', v ? '1' : '0').catch(() => {});
+  };
+
+  return (
+    <ThemeContext.Provider value={{ colors: dark ? darkColors : lightColors, dark, setDark }}>
+      {children}
+    </ThemeContext.Provider>
+  );
+}
+
 // Screens call useTheme() to get the colours
-export const useTheme = () => ({ colors });
+export const useTheme = () => useContext(ThemeContext);

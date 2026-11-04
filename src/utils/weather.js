@@ -22,7 +22,11 @@ export async function getWeather(db) {
     const url =
       `https://api.open-meteo.com/v1/forecast?latitude=${latitude}&longitude=${longitude}` +
       `&current=apparent_temperature&daily=precipitation_probability_max&timezone=auto&forecast_days=1`;
-    const res = await fetch(url);
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 6000);
+    const res = await fetch(url, { signal: controller.signal });
+    clearTimeout(timer);
+    if (!res.ok) throw new Error('weather ' + res.status);
     const json = await res.json();
     const temperature = json.current.apparent_temperature;
     const rainChance = json.daily.precipitation_probability_max[0] ?? 0;

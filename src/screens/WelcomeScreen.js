@@ -8,8 +8,9 @@ export default function WelcomeScreen({ navigation }) {
     <Screen style={{ justifyContent: 'center', padding: 28 }}>
       <View style={{ alignItems: 'center', gap: 14, marginBottom: 40 }}>
         <Image
-          source={require('../../assets/logo.png')}
-          style={{ width: 140, height: 140, borderRadius: 70, backgroundColor: colors.primaryContainer, borderWidth: 3, borderColor: '#fff' }}
+            source={require('../../assets/logo.png')}
+            resizeMode="contain"
+            style={{ width: 220, height: 220, borderRadius: 32, backgroundColor: '#000' }}
         />
         <Txt bold size={38} color={colors.primary}>FitsForYou</Txt>
         <Txt muted size={18} style={{ textAlign: 'center' }}>Organize your wardrobe. Dress with ease.</Txt>

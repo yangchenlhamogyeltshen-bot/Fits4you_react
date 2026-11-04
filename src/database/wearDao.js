@@ -13,3 +13,10 @@ export async function markWorn(db, userId, pieces) {
     );
   }
 }
+
+export async function getWearHistory(db, itemId, type, limit = 10) {
+  return db.getAllAsync(
+    'SELECT worn_on FROM wear_events WHERE item_id = ? AND item_type = ? ORDER BY worn_on DESC LIMIT ?',
+    [itemId, type, limit]
+  );
+}
