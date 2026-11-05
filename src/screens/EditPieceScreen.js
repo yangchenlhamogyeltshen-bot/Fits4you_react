@@ -3,11 +3,11 @@ import { View, ScrollView, Alert } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { getItem, updateItem } from '../database/clothingDao';
 import { getTraditionalItem, updateTraditional } from '../database/traditionalDao';
-import { CATEGORIES, SEASONS, PIECES, OCCASIONS } from '../constants';
+import { CATEGORIES, SEASONS, PIECES, ITEM_OCCASIONS } from '../constants';
 import { pickPhoto } from '../utils/photo';
-import { Screen, Header, Photo, Button, Input, Label, Swatches, Options, WarmthPicker } from '../components/UI';
+import { Screen, Header, Photo, Button, Input, Label, Swatches, Options, WarmthPicker, Card, SwitchRow } from '../components/UI';
 import { radius } from '../theme';
- 
+
 export default function EditPieceScreen({ route, navigation }) {
   const { id, type } = route.params;
   const isModern = type === 'modern';
@@ -21,8 +21,9 @@ export default function EditPieceScreen({ route, navigation }) {
   const [pieceType, setPieceType] = useState('Gho');
   const [occasion, setOccasion] = useState('Daily');
   const [warmth, setWarmth] = useState(3);
+  const [capsule, setCapsule] = useState(false);
   const [imageUri, setImageUri] = useState(null);
- 
+
   useEffect(() => {
     (async () => {
       const it = isModern ? await getItem(db, id) : await getTraditionalItem(db, id);
@@ -30,6 +31,7 @@ export default function EditPieceScreen({ route, navigation }) {
       setName(it.name);
       setWarmth(it.warmth ?? 3);
       setImageUri(it.image_uri);
+      setCapsule(it.is_capsule === 1);
       if (isModern) {
         setColor(it.color || '');
         setCategory(it.category);
@@ -42,22 +44,22 @@ export default function EditPieceScreen({ route, navigation }) {
       setLoaded(true);
     })();
   }, []);
- 
+
   const choose = async (useCamera) => {
     const uri = await pickPhoto(useCamera);
     if (uri) setImageUri(uri);
   };
- 
+
   const save = async () => {
     if (!name.trim()) return Alert.alert('Please enter a name');
     if (isModern) {
-      await updateItem(db, id, { name: name.trim(), category, color, season, warmth, imageUri });
+      await updateItem(db, id, { name: name.trim(), category, color, season, warmth, imageUri, capsule });
     } else {
-      await updateTraditional(db, id, { name: name.trim(), pieceType, fabric: fabric.trim(), occasion, warmth, imageUri });
+      await updateTraditional(db, id, { name: name.trim(), pieceType, fabric: fabric.trim(), occasion, warmth, imageUri, capsule });
     }
     navigation.goBack();
   };
- 
+
   if (!loaded) {
     return (
       <Screen>
@@ -65,7 +67,7 @@ export default function EditPieceScreen({ route, navigation }) {
       </Screen>
     );
   }
- 
+
   return (
     <Screen>
       <Header title={isModern ? 'Edit Clothing' : 'Edit Traditional Wear'} onBack={() => navigation.goBack()} />
@@ -75,10 +77,10 @@ export default function EditPieceScreen({ route, navigation }) {
           <Button title="Camera" icon="camera" variant="soft" style={{ flex: 1 }} onPress={() => choose(true)} />
           <Button title="Gallery" icon="images" variant="soft" style={{ flex: 1 }} onPress={() => choose(false)} />
         </View>
- 
+
         <Label>Name</Label>
         <Input value={name} onChangeText={setName} />
- 
+
         {isModern ? (
           <>
             <Label>Colour</Label>
@@ -91,11 +93,20 @@ export default function EditPieceScreen({ route, navigation }) {
             <Label>Fabric</Label>
             <Input value={fabric} onChangeText={setFabric} />
             <Options label="Piece type" values={PIECES} value={pieceType} onChange={setPieceType} />
-            <Options label="Occasion" values={OCCASIONS} value={occasion} onChange={setOccasion} />
+            <Options label="Occasion (Both = works for daily and special outfits)" values={ITEM_OCCASIONS} value={occasion} onChange={setOccasion} />
           </>
         )}
         <WarmthPicker category={isModern ? category : ''} value={warmth} onChange={setWarmth} />
- 
+
+        <Card flat style={{ marginTop: 20, paddingVertical: 6 }}>
+          <SwitchRow
+            label="Add to Essentials"
+            hint="Slide on to make this one of your core pieces"
+            value={capsule}
+            onChange={setCapsule}
+          />
+        </Card>
+
         <Button title="Save Changes" style={{ marginTop: 28 }} onPress={save} />
       </ScrollView>
     </Screen>

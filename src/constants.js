@@ -1,7 +1,8 @@
 export const CATEGORIES = ['Tops', 'Bottoms', 'Dresses', 'Outerwear', 'Shoes', 'Accessories'];
 export const SEASONS = ['Summer', 'Winter', 'All Season'];
 export const PIECES = ['Gho', 'Kira', 'Tego', 'Wonju', 'Rachu', 'Kabney', 'Kera'];
-export const OCCASIONS = ['Daily', 'Tshechu', 'Losar', 'Wedding'];
+export const OCCASIONS = ['Daily', 'Special'];
+export const ITEM_OCCASIONS = ['Daily', 'Special', 'Both'];   // what a piece can be saved as
 
 // Clothing swatches from the Android app (AddClothingActivity)
 export const COLORS = [

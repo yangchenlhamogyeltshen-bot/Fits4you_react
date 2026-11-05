@@ -20,11 +20,10 @@ export default function LookEditorScreen({ route, navigation }) {
   const [name, setName] = useState('');
   const [selected, setSelected] = useState([]); // keys like 'm:3' or 't:5'
 
+  // Only loads data. Nothing is saved here.
   useEffect(() => {
     (async () => {
       const uid = auth.currentUser?.uid;
-      const pieces = selected.map(it => ({ id: it.id, type: it.type }));  // selected holds item objects
-      await saveLook(db, uid, name, pieces); 
       if (!uid) return;
       setModern(await getItems(db, uid));
       setTraditional(await getTraditional(db, uid));
@@ -47,6 +46,7 @@ export default function LookEditorScreen({ route, navigation }) {
     setSelected((s) => (s.includes(k) ? s.filter((x) => x !== k) : [...s, k]));
   };
 
+  // The only place a look is saved: when you press Save Look
   const save = async () => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;

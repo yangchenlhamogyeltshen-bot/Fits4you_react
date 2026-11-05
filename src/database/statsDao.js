@@ -23,8 +23,12 @@ export async function getStats(db, userId) {
   const traditional = await count('SELECT COUNT(*) AS n FROM traditional_items WHERE user_id = ?');
   const wears = await count('SELECT COUNT(*) AS n FROM wear_events WHERE user_id = ?');
   const looks = await count('SELECT COUNT(*) AS n FROM outfits WHERE user_id = ?');
-  const capsule = await count('SELECT COUNT(*) AS n FROM modern_items WHERE user_id = ? AND is_capsule = 1');
-  const needsWash = await count("SELECT COUNT(*) AS n FROM modern_items WHERE user_id = ? AND status = 'Needs washing'");
+  const capsule =
+    (await count('SELECT COUNT(*) AS n FROM modern_items WHERE user_id = ? AND is_capsule = 1')) +
+    (await count('SELECT COUNT(*) AS n FROM traditional_items WHERE user_id = ? AND is_capsule = 1'));
+  const needsWash =
+    (await count("SELECT COUNT(*) AS n FROM modern_items WHERE user_id = ? AND status = 'Needs washing'")) +
+    (await count("SELECT COUNT(*) AS n FROM traditional_items WHERE user_id = ? AND status = 'Needs washing'"));
 
   const mostWorn = await db.getAllAsync(
     `SELECT id, name, times_worn, image_uri, 'modern' AS type FROM modern_items WHERE user_id = ? AND times_worn > 0

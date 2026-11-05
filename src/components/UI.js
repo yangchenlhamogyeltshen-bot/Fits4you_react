@@ -4,8 +4,9 @@ import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTheme, radius, shadow } from '../theme';
-import { COLORS, hexOf, WEIGHTS, weightLabel } from '../constants';
- 
+import { COLORS, hexOf } from '../constants';
+import { useNavigation, useRoute } from '@react-navigation/native';
+
 export function Txt({ style, muted, bold, size, color, children, ...rest }) {
   const { colors } = useTheme();
   return (
@@ -17,17 +18,40 @@ export function Txt({ style, muted, bold, size, color, children, ...rest }) {
     </Text>
   );
 }
- 
+
 export function Screen({ children, style }) {
   const { colors } = useTheme();
   return <View style={[{ flex: 1, backgroundColor: colors.bg }, style]}>{children}</View>;
 }
- 
+
+// True when a "Settings" screen can be reached from here (so not on Welcome, Login or Sign Up)
+function hasSettingsRoute(navigation) {
+  let n = navigation;
+  while (n) {
+    const state = n.getState ? n.getState() : null;
+    if (state && state.routeNames && state.routeNames.includes('Settings')) return true;
+    n = n.getParent ? n.getParent() : undefined;
+  }
+  return false;
+}
+
 // One header for every screen: big bold title with a coral bar underneath.
-// With onBack, the arrow (and any right-hand action) sits on a row above the title.
-export function Header({ title, onBack, right, subtitle, logo }) {
+// With onBack, the arrow (and the right-hand actions) sit on a row above the title.
+// The settings gear is added automatically; pass settings={false} to hide it on one screen.
+export function Header({ title, onBack, right, subtitle, logo, settings = true }) {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
+  const navigation = useNavigation();
+  const route = useRoute();
+  const showGear = settings && route.name !== 'Settings' && hasSettingsRoute(navigation);
+
+  const actions = (
+    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+      {right}
+      {showGear ? <IconButton name="settings-outline" onPress={() => navigation.navigate('Settings')} /> : null}
+    </View>
+  );
+
   return (
     <View
       style={{
@@ -40,10 +64,10 @@ export function Header({ title, onBack, right, subtitle, logo }) {
           <TouchableOpacity onPress={onBack} style={{ width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="arrow-back" size={26} color={colors.primary} />
           </TouchableOpacity>
-          {right}
+          {actions}
         </View>
       ) : null}
- 
+
       <View style={{ flexDirection: 'row', alignItems: 'flex-end' }}>
         {logo ? <Image source={logo} style={{ width: 44, height: 44, borderRadius: 12, marginRight: 12 }} /> : null}
         <View style={{ flex: 1 }}>
@@ -58,17 +82,17 @@ export function Header({ title, onBack, right, subtitle, logo }) {
           {subtitle ? <Txt muted size={14} style={{ marginTop: 2 }}>{subtitle}</Txt> : null}
           <View style={{ width: 44, height: 4, borderRadius: 2, backgroundColor: colors.secondary, marginTop: 10 }} />
         </View>
-        {onBack ? null : right}
+        {onBack ? null : actions}
       </View>
     </View>
   );
 }
- 
+
 // Kept so Collections and Looks still work; it is now the same as Header
 export function PageTitle(props) {
   return <Header {...props} />;
 }
- 
+
 export function IconButton({ name, onPress, tint, bg, size = 44 }) {
   const { colors } = useTheme();
   return (
@@ -80,7 +104,7 @@ export function IconButton({ name, onPress, tint, bg, size = 44 }) {
     </TouchableOpacity>
   );
 }
- 
+
 export function TextAction({ title, onPress, color }) {
   const { colors } = useTheme();
   return (
@@ -89,7 +113,7 @@ export function TextAction({ title, onPress, color }) {
     </TouchableOpacity>
   );
 }
- 
+
 export function Card({ children, style, flat }) {
   const { colors } = useTheme();
   return (
@@ -104,7 +128,7 @@ export function Card({ children, style, flat }) {
     </View>
   );
 }
- 
+
 export function Button({ title, onPress, variant = 'solid', icon, style, disabled }) {
   const { colors } = useTheme();
   const map = {
@@ -129,7 +153,7 @@ export function Button({ title, onPress, variant = 'solid', icon, style, disable
     </TouchableOpacity>
   );
 }
- 
+
 export function Chip({ label, active, onPress }) {
   const { colors } = useTheme();
   return (
@@ -144,7 +168,7 @@ export function Chip({ label, active, onPress }) {
     </TouchableOpacity>
   );
 }
- 
+
 export function Badge({ label, tone = 'secondary', style }) {
   const { colors } = useTheme();
   const bg = tone === 'accent' ? colors.accentContainer : tone === 'primary' ? colors.primaryContainer : colors.secondaryContainer;
@@ -155,7 +179,7 @@ export function Badge({ label, tone = 'secondary', style }) {
     </View>
   );
 }
- 
+
 export function Input({ style, ...props }) {
   const { colors } = useTheme();
   return (
@@ -170,7 +194,7 @@ export function Input({ style, ...props }) {
     />
   );
 }
- 
+
 export function SearchBar({ value, onChangeText, placeholder }) {
   const { colors } = useTheme();
   return (
@@ -189,11 +213,11 @@ export function SearchBar({ value, onChangeText, placeholder }) {
     </View>
   );
 }
- 
+
 export function Label({ children }) {
   return <Txt bold style={{ marginTop: 14, marginBottom: 8 }}>{children}</Txt>;
 }
- 
+
 export function Options({ label, values, value, onChange }) {
   return (
     <View>
@@ -206,26 +230,15 @@ export function Options({ label, values, value, onChange }) {
     </View>
   );
 }
- 
-// Warmth 1-5 for clothes, Light / Medium / Heavy for accessories
+
+// Warmth 1-5 for clothes. Shoes and accessories use Season only, so nothing is shown for them.
 export function WarmthPicker({ category, value, onChange }) {
-  if (category === 'Accessories') {
-    return (
-      <View>
-        <Label>Weight (how heavy it feels)</Label>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap' }}>
-          {WEIGHTS.map((w) => (
-            <Chip key={w.label} label={w.label} active={weightLabel(value) === w.label} onPress={() => onChange(w.value)} />
-          ))}
-        </View>
-      </View>
-    );
-  }
+  if (category === 'Shoes' || category === 'Accessories') return null;
   return (
     <Options label="Warmth (1 = very light, 5 = very warm)" values={[1, 2, 3, 4, 5]} value={value} onChange={onChange} />
   );
 }
- 
+
 function hslToHex(h, s, l) {
   s /= 100; l /= 100;
   const k = (n) => (n + h / 30) % 12;
@@ -234,7 +247,7 @@ function hslToHex(h, s, l) {
   const to = (x) => Math.round(255 * x).toString(16).padStart(2, '0');
   return ('#' + to(f(0)) + to(f(8)) + to(f(4))).toUpperCase();
 }
- 
+
 function hexToHsl(hex) {
   const r = parseInt(hex.slice(1, 3), 16) / 255;
   const g = parseInt(hex.slice(3, 5), 16) / 255;
@@ -253,7 +266,7 @@ function hexToHsl(hex) {
   }
   return [Math.round(h), Math.round(s * 100), Math.round(l * 100)];
 }
- 
+
 // Quick swatches plus a custom colour picker (any colour, stored as a hex value)
 export function Swatches({ value, onChange }) {
   const { colors } = useTheme();
@@ -261,9 +274,9 @@ export function Swatches({ value, onChange }) {
   const current = hexOf(value) || '#808080';
   const [h, s, l] = hexToHsl(current);
   const isCustom = !!value && !COLORS.some((c) => c.name === value);
- 
+
   const set = (nh, ns, nl) => onChange(hslToHex(nh, ns, nl));
- 
+
   const row = (label, max, val, onSlide) => (
     <View style={{ marginTop: 6 }}>
       <Txt muted size={12}>{label}</Txt>
@@ -279,7 +292,7 @@ export function Swatches({ value, onChange }) {
       />
     </View>
   );
- 
+
   return (
     <View>
       <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 12 }}>
@@ -305,7 +318,7 @@ export function Swatches({ value, onChange }) {
           <Ionicons name="color-palette" size={20} color={isCustom ? '#fff' : colors.primary} />
         </TouchableOpacity>
       </View>
- 
+
       {open && (
         <View style={{ marginTop: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
@@ -320,7 +333,7 @@ export function Swatches({ value, onChange }) {
     </View>
   );
 }
- 
+
 export function SwitchRow({ label, hint, value, onChange }) {
   const { colors } = useTheme();
   return (
@@ -338,14 +351,14 @@ export function SwitchRow({ label, hint, value, onChange }) {
     </View>
   );
 }
- 
+
 export function ColorDot({ name }) {
   const { colors } = useTheme();
   const hex = hexOf(name);
   if (!hex) return null;
   return <View style={{ width: 14, height: 14, borderRadius: 7, backgroundColor: hex, borderWidth: 1, borderColor: colors.border }} />;
 }
- 
+
 export function Photo({ uri, style, iconSize = 36, fit = 'cover' }) {
   const { colors } = useTheme();
   if (uri) {
@@ -363,7 +376,7 @@ export function Photo({ uri, style, iconSize = 36, fit = 'cover' }) {
     </View>
   );
 }
- 
+
 // Two-column grid card used by Closet, Capsule, Looks picker and Mark Worn
 export function ItemCard({ title, subtitle, uri, essential, badge, selected, onPress, onLongPress }) {
   const { colors } = useTheme();
@@ -410,7 +423,7 @@ export function ItemCard({ title, subtitle, uri, essential, badge, selected, onP
     </TouchableOpacity>
   );
 }
- 
+
 // A saved Look: all pieces shown whole, with the name large underneath
 export function LookCard({ look, onPress, onLongPress }) {
   const { colors } = useTheme();
@@ -461,7 +474,7 @@ export function LookCard({ look, onPress, onLongPress }) {
     </TouchableOpacity>
   );
 }
- 
+
 export function EmptyState({ icon = 'shirt-outline', title, text, button, onPress }) {
   const { colors } = useTheme();
   return (
@@ -475,7 +488,7 @@ export function EmptyState({ icon = 'shirt-outline', title, text, button, onPres
     </View>
   );
 }
- 
+
 export function SectionTitle({ children, style }) {
   const { colors } = useTheme();
   return (
@@ -484,7 +497,7 @@ export function SectionTitle({ children, style }) {
     </Txt>
   );
 }
- 
+
 // Thin band in your palette, like a woven cloth edge
 export function StripeBand({ style }) {
   const { colors } = useTheme();

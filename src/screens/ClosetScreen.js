@@ -5,9 +5,11 @@ import { useFocusEffect } from '@react-navigation/native';
 import { auth } from '../firebase';
 import { getItems, deleteItem } from '../database/clothingDao';
 import { getTraditional, deleteTraditional } from '../database/traditionalDao';
-import { CATEGORIES, PIECES } from '../constants';
+import { CATEGORIES, PIECES, OCCASIONS, colorName } from '../constants';
 import { Screen, Header, Txt, SearchBar, Chip, ItemCard, EmptyState } from '../components/UI';
 import { useTheme } from '../theme';
+
+const STATUSES = ['All', 'Clean', 'Needs washing'];
 
 export default function ClosetScreen({ navigation }) {
   const { colors } = useTheme();
@@ -17,6 +19,8 @@ export default function ClosetScreen({ navigation }) {
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('All');
   const [piece, setPiece] = useState('All');
+  const [occasion, setOccasion] = useState('All');
+  const [status, setStatus] = useState('All');
 
   const isModern = wardrobe === 'Modern';
   const chips = isModern ? ['All', ...CATEGORIES] : ['All', ...PIECES];
@@ -26,9 +30,27 @@ export default function ClosetScreen({ navigation }) {
   const load = useCallback(async () => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
-    if (isModern) setItems(await getItems(db, uid, search, category));
-    else setItems(await getTraditional(db, uid, search, piece));
-  }, [db, isModern, search, category, piece]);
+    if (isModern) {
+      setItems(await getItems(db, uid, search, category, status));
+    } else {
+      // Load everything, then filter here so search, piece type, occasion and washing always work.
+      // A piece saved as "Both" shows under Daily and under Special.
+      const all = await getTraditional(db, uid);
+      const q = search.trim().toLowerCase();
+      const washOk = (i) =>
+        status === 'All' ||
+        (status === 'Needs washing' ? i.status === 'Needs washing' : i.status !== 'Needs washing');
+      setItems(
+        all.filter(
+          (i) =>
+            (piece === 'All' || i.piece_type === piece) &&
+            (occasion === 'All' || i.occasion === occasion || i.occasion === 'Both') &&
+            washOk(i) &&
+            (!q || (i.name || '').toLowerCase().includes(q))
+        )
+      );
+    }
+  }, [db, isModern, search, category, piece, occasion, status]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -49,6 +71,7 @@ export default function ClosetScreen({ navigation }) {
 
   return (
     <Screen>
+      {/* The settings gear is added by Header automatically */}
       <Header title="My Wardrobe" subtitle={`${items.length} ${items.length === 1 ? 'piece' : 'pieces'}`} />
 
       <View style={{ paddingHorizontal: 16, paddingTop: 14 }}>
@@ -71,9 +94,40 @@ export default function ClosetScreen({ navigation }) {
         <SearchBar value={search} onChangeText={setSearch} placeholder="Search clothes..." />
 
         {/* Category chips (modern) or piece-type chips (traditional) */}
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: 12 }}>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0, marginTop: 12 }}
+          contentContainerStyle={{ paddingRight: 40 }}
+        >
           {chips.map((c) => (
             <Chip key={c} label={c} active={activeChip === c} onPress={() => pickChip(c)} />
+          ))}
+        </ScrollView>
+
+        {/* Occasion chips, traditional only */}
+        {!isModern && (
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={{ flexGrow: 0 }}
+            contentContainerStyle={{ paddingRight: 40 }}
+          >
+            {['All', ...OCCASIONS].map((o) => (
+              <Chip key={o} label={o} active={occasion === o} onPress={() => setOccasion(o)} />
+            ))}
+          </ScrollView>
+        )}
+
+        {/* Laundry filter, both wardrobes */}
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flexGrow: 0 }}
+          contentContainerStyle={{ paddingRight: 40 }}
+        >
+          {STATUSES.map((s) => (
+            <Chip key={s} label={s === 'All' ? 'Any status' : s} active={status === s} onPress={() => setStatus(s)} />
           ))}
         </ScrollView>
       </View>
@@ -83,7 +137,7 @@ export default function ClosetScreen({ navigation }) {
         numColumns={2}
         keyExtractor={(i) => String(i.id)}
         columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 16 }}
-        contentContainerStyle={{ paddingTop: 14, paddingBottom: 40 }}
+        contentContainerStyle={{ paddingTop: 10, paddingBottom: 40 }}
         ListEmptyComponent={
           <EmptyState
             title="Nothing here yet"
@@ -93,10 +147,10 @@ export default function ClosetScreen({ navigation }) {
         renderItem={({ item }) => (
           <ItemCard
             title={item.name}
-            subtitle={isModern ? `${item.category} · ${item.color || '-'}` : `${item.piece_type} · ${item.occasion}`}
+            subtitle={isModern ? `${item.category} · ${colorName(item.color)}` : `${item.piece_type} · ${item.occasion}`}
             uri={item.image_uri}
-            essential={isModern && item.is_capsule === 1}
-            badge={isModern && item.status === 'Needs washing' ? 'NEEDS WASH' : null}
+            essential={item.is_capsule === 1}
+            badge={item.status === 'Needs washing' ? 'NEEDS WASH' : null}
             onPress={() => navigation.navigate('PieceDetails', { id: item.id, type: isModern ? 'modern' : 'traditional' })}
             onLongPress={() => confirmDelete(item)}
           />

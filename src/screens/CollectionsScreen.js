@@ -14,6 +14,7 @@ export default function CollectionsScreen({ navigation }) {
 
   return (
     <Screen>
+      {/* The settings gear is added by PageTitle (Header) automatically */}
       <PageTitle title="Collections" subtitle="Looks, essentials and laundry" />
 
       <View style={{ paddingHorizontal: 16, paddingTop: 4 }}>

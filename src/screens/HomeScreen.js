@@ -14,7 +14,7 @@ import { getDisplayName } from '../utils/user';
 import { OCCASIONS } from '../constants';
 import { Screen, Header, IconButton, Card, Txt, Input, Chip, Button, Photo } from '../components/UI';
 import { useTheme } from '../theme';
- 
+
 // 1 piece = one big photo, 2 or more = two columns.
 // Whole garment visible (contain), with exact pixel sizes so the image always renders.
 function PhotoGrid({ items }) {
@@ -36,7 +36,7 @@ function PhotoGrid({ items }) {
     </View>
   );
 }
- 
+
 export default function HomeScreen({ navigation }) {
   const { colors } = useTheme();
   const db = useSQLiteContext();
@@ -50,7 +50,7 @@ export default function HomeScreen({ navigation }) {
   const [mode, setMode] = useState('Modern'); // 'Modern' or 'Traditional'
   const [occasion, setOccasion] = useState('Daily');
   const [index, setIndex] = useState(0);
- 
+
   const load = useCallback(async () => {
     const user = auth.currentUser;
     if (!user) return;
@@ -60,37 +60,40 @@ export default function HomeScreen({ navigation }) {
     setLooks(await getLooks(db, user.uid));
     setWeather(await getWeather(db));
   }, [db]);
- 
+
   useFocusEffect(useCallback(() => { load(); }, [load]));
- 
+
   // The user can type the temperature if the weather is not available
   const typed = parseFloat(manualTemp);
   const temp = !isNaN(typed) ? typed : weather?.temperature;
   const rain = weather?.rainChance ?? 0;
- 
+
   const count = (c) => modern.filter((i) => i.category === c).length;
- 
+
   const isModern = mode === 'Modern';
-  // Saved looks come first, then generated outfits
+  // Saved looks come first, then generated outfits.
+  // Traditional outfits borrow their shoes from the modern wardrobe.
   const modernOutfits = temp !== undefined ? suggestModern(modern, looks, temp, rain) : [];
-  const tradOutfits = temp !== undefined ? suggestTraditionalAll(traditional, looks, occasion, temp) : [];
+  const tradOutfits =
+    temp !== undefined ? suggestTraditionalAll(traditional, looks, occasion, temp, Date.now(), modern) : [];
   const outfits = isModern ? modernOutfits : tradOutfits;
   const picked = outfits.length ? outfits[index % outfits.length] : null;
   const current = picked ? picked.items : [];
   const gaps = !isModern ? traditionalGaps(traditional, occasion) : [];
- 
+
   const wear = async () => {
     const uid = auth.currentUser?.uid;
     if (!uid || current.length === 0) return;
-    await markWorn(db, uid, current.map((p) => ({ id: p.id, type: isModern ? 'modern' : 'traditional' })));
+    // A traditional outfit can include a modern shoe, so record each piece by its own kind
+    await markWorn(db, uid, current.map((p) => ({ id: p.id, type: p.piece_type ? 'traditional' : 'modern' })));
     Alert.alert('Recorded', 'Marked as worn today.');
     load();
   };
- 
+
   const today = new Date().toLocaleDateString(undefined, { weekday: 'long', day: 'numeric', month: 'short' });
   const updated = weather ? new Date(weather.updatedOn).toLocaleTimeString() : '';
   const weatherIcon = rain >= 50 ? 'rainy' : rain >= 20 ? 'partly-sunny' : 'sunny';
- 
+
   const emptyText = isModern
     ? temp === undefined
       ? 'Weather unavailable. Use "Change temperature" below to type it in.'
@@ -98,14 +101,11 @@ export default function HomeScreen({ navigation }) {
     : gaps.length
       ? `Add a ${gaps.join(' and ')} for ${occasion} to complete a Kira outfit.`
       : `No outfit for ${occasion} yet. A Kira outfit needs a Kira, Tego and Wonju. A Gho outfit needs a Gho.`;
- 
+
   return (
     <Screen>
-      <Header
-        title={`Hello, ${name}`}
-        subtitle={today}
-        right={<IconButton name="settings-outline" onPress={() => navigation.navigate('Settings')} />}
-      />
+      {/* The settings gear is added by Header automatically */}
+      <Header title={`Hello, ${name}`} subtitle={today} />
       <ScrollView contentContainerStyle={{ padding: 16, paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         {/* Modern / Traditional switch */}
         <View style={{ flexDirection: 'row', backgroundColor: colors.primaryContainer, borderRadius: 24, padding: 4 }}>
@@ -122,7 +122,7 @@ export default function HomeScreen({ navigation }) {
             </TouchableOpacity>
           ))}
         </View>
- 
+
         {/* Occasion chips, only for traditional wear */}
         {!isModern && (
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0, marginTop: 12 }}>
@@ -131,7 +131,7 @@ export default function HomeScreen({ navigation }) {
             ))}
           </ScrollView>
         )}
- 
+
         {/* The one thing to focus on: today's outfit */}
         <Card style={{ padding: 14, borderRadius: 24, marginTop: 14 }}>
           <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 12 }}>
@@ -155,7 +155,7 @@ export default function HomeScreen({ navigation }) {
               <Txt muted size={12}>{rain}%</Txt>
             </View>
           </View>
- 
+
           {current.length > 0 ? (
             <>
               <PhotoGrid items={current} />
@@ -187,7 +187,7 @@ export default function HomeScreen({ navigation }) {
             </View>
           )}
         </Card>
- 
+
         {/* Quiet extras */}
         <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 20, paddingHorizontal: 4 }}>
           <TouchableOpacity onPress={() => setEditTemp(!editTemp)} style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
@@ -199,7 +199,7 @@ export default function HomeScreen({ navigation }) {
             <Txt muted size={14}>Log what I wore</Txt>
           </TouchableOpacity>
         </View>
- 
+
         {editTemp && (
           <View style={{ flexDirection: 'row', gap: 10, marginTop: 14, alignItems: 'center' }}>
             <Input
@@ -212,7 +212,7 @@ export default function HomeScreen({ navigation }) {
             <IconButton name="refresh" onPress={load} />
           </View>
         )}
- 
+
         {weather?.fromCache ? (
           <Txt muted size={11} style={{ marginTop: 12, paddingHorizontal: 4 }}>Offline · weather last updated {updated}</Txt>
         ) : null}

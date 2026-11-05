@@ -4,7 +4,14 @@ import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { auth } from '../firebase';
 import { getItems, setCapsule } from '../database/clothingDao';
+import { getTraditional, setTraditionalCapsule } from '../database/traditionalDao';
+import { colorName } from '../constants';
 import { Screen, Header, Txt, Button, ItemCard, EmptyState } from '../components/UI';
+
+const subtitleOf = (item) =>
+  item.type === 'traditional'
+    ? `${item.piece_type} · ${item.occasion}`
+    : `${item.category} · ${colorName(item.color)}`;
 
 export default function CapsuleScreen({ navigation, embedded }) {
   const db = useSQLiteContext();
@@ -14,7 +21,9 @@ export default function CapsuleScreen({ navigation, embedded }) {
   const load = useCallback(async () => {
     const uid = auth.currentUser?.uid;
     if (!uid) return;
-    setAll(await getItems(db, uid));
+    const modern = (await getItems(db, uid)).map((i) => ({ ...i, type: 'modern' }));
+    const traditional = (await getTraditional(db, uid)).map((i) => ({ ...i, type: 'traditional' }));
+    setAll([...modern, ...traditional]);
   }, [db]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
@@ -23,15 +32,16 @@ export default function CapsuleScreen({ navigation, embedded }) {
   const others = all.filter((i) => i.is_capsule !== 1);
   const data = adding ? others : capsule;
 
-  const add = async (item) => {
-    await setCapsule(db, item.id, true);
+  const setFlag = async (item, flag) => {
+    if (item.type === 'modern') await setCapsule(db, item.id, flag);
+    else await setTraditionalCapsule(db, item.id, flag);
     load();
   };
 
   const remove = (item) => {
     Alert.alert('Remove from essentials', `Remove ${item.name} from your essentials?`, [
       { text: 'Cancel', style: 'cancel' },
-      { text: 'Remove', style: 'destructive', onPress: async () => { await setCapsule(db, item.id, false); load(); } },
+      { text: 'Remove', style: 'destructive', onPress: () => setFlag(item, false) },
     ]);
   };
 
@@ -53,7 +63,7 @@ export default function CapsuleScreen({ navigation, embedded }) {
       <FlatList
         data={data}
         numColumns={2}
-        keyExtractor={(i) => String(i.id)}
+        keyExtractor={(i) => `${i.type}-${i.id}`}
         columnWrapperStyle={{ justifyContent: 'space-between', paddingHorizontal: 16 }}
         contentContainerStyle={{ paddingBottom: 40 }}
         ListEmptyComponent={
@@ -66,10 +76,11 @@ export default function CapsuleScreen({ navigation, embedded }) {
         renderItem={({ item }) => (
           <ItemCard
             title={item.name}
-            subtitle={`${item.category} · ${item.color || '-'}`}
+            subtitle={subtitleOf(item)}
             uri={item.image_uri}
             essential={!adding}
-            onPress={() => (adding ? add(item) : navigation.navigate('PieceDetails', { id: item.id, type: 'modern' }))}
+            badge={item.status === 'Needs washing' ? 'NEEDS WASH' : null}
+            onPress={() => (adding ? setFlag(item, true) : navigation.navigate('PieceDetails', { id: item.id, type: item.type }))}
             onLongPress={() => !adding && remove(item)}
           />
         )}

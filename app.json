@@ -1,3 +1,4 @@
+
 {
   "expo": {
     "name": "FitsForYou",
@@ -7,11 +8,13 @@
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "FitsForYou uses your location to provide local weather information."
+      }
     },
     "android": {
       "package": "com.fitsforyou.app",
-    
       "adaptiveIcon": {
         "foregroundImage": "./assets/android-icon-foreground.png",
         "backgroundColor": "#000000"
@@ -21,7 +24,13 @@
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite"
+      "expo-sqlite",
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow FitsForYou to access your location to provide local weather information."
+        }
+      ]
     ]
   }
 }

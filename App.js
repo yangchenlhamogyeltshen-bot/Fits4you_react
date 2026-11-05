@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { migrate } from './src/database/migrate';
 import { useFonts, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
 import { ActivityIndicator, Alert, TouchableOpacity, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -124,7 +125,13 @@ function AuthApp() {
 function MainApp() {
   const navTheme = useNavTheme();
   return (
-    <SQLiteProvider databaseName="fitsforyou.db" onInit={initDatabase}>
+    <SQLiteProvider
+      databaseName="fitsforyou.db"
+      onInit={async (db) => {
+        await initDatabase(db);
+        await migrate(db);
+      }}
+    >
       <NavigationContainer theme={navTheme}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
           <Stack.Screen name="Tabs" component={MainTabs} />
@@ -143,7 +150,7 @@ function MainApp() {
 
 function Root() {
   const [fontsLoaded] = useFonts({ Fraunces_600SemiBold });
-  const { dark } = useTheme();
+  const { colors, dark } = useTheme();
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
   const [splashDone, setSplashDone] = useState(false);
