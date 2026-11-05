@@ -45,10 +45,19 @@ export const darkColors = {
   scrim: 'rgba(0,0,0,0.6)',
 };
 
+// Colours that never change with light/dark mode: garment photos always sit on white,
+// and text drawn over a photo or a coloured swatch is always white.
+export const fixed = { white: '#FFFFFF', black: '#000000' };
+
 // Kept so older imports still work (this one is always the light palette)
 export const colors = lightColors;
 
 export const radius = { card: 20, cardSmall: 12, cardLarge: 28, button: 28, input: 16 };
+
+// Font families. The name must match the key given to useFonts() in App.js, and the font is
+// applied to every title through <Txt heading>, <Header>, <LookCard> and <EmptyState>.
+// Custom fonts ship one weight per family, so do not add fontWeight next to these.
+export const fonts = { heading: 'Fraunces_600SemiBold' };
 
 export const shadow = {
   shadowColor: '#000',

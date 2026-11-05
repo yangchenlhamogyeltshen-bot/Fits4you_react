@@ -3,16 +3,21 @@ import { View, Text, TextInput, TouchableOpacity, Image, Switch, useWindowDimens
 import Slider from '@react-native-community/slider';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useTheme, radius, shadow } from '../theme';
+import { useTheme, radius, shadow, fonts, fixed } from '../theme';
 import { COLORS, hexOf } from '../constants';
 import { useNavigation, useRoute } from '@react-navigation/native';
 
-export function Txt({ style, muted, bold, size, color, children, ...rest }) {
+// Text. Pass `heading` for the Fraunces title font (it replaces bold, since the font is already heavy)
+export function Txt({ style, muted, bold, heading, size, color, children, ...rest }) {
   const { colors } = useTheme();
   return (
     <Text
       {...rest}
-      style={[{ color: color || (muted ? colors.muted : colors.text), fontSize: size || 15 }, bold && { fontWeight: 'bold' }, style]}
+      style={[
+        { color: color || (muted ? colors.muted : colors.text), fontSize: size || 15 },
+        heading ? { fontFamily: fonts.heading } : bold && { fontWeight: 'bold' },
+        style,
+      ]}
     >
       {children}
     </Text>
@@ -48,7 +53,7 @@ export function Header({ title, onBack, right, subtitle, logo, settings = true }
   const actions = (
     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
       {right}
-      {showGear ? <IconButton name="settings-outline" onPress={() => navigation.navigate('Settings')} /> : null}
+      {showGear ? <IconButton name="settings-outline" label="Settings" onPress={() => navigation.navigate('Settings')} /> : null}
     </View>
   );
 
@@ -61,7 +66,12 @@ export function Header({ title, onBack, right, subtitle, logo, settings = true }
     >
       {onBack ? (
         <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-          <TouchableOpacity onPress={onBack} style={{ width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' }}>
+          <TouchableOpacity
+            onPress={onBack}
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
+            style={{ width: 44, height: 44, marginLeft: -10, alignItems: 'center', justifyContent: 'center' }}
+          >
             <Ionicons name="arrow-back" size={26} color={colors.primary} />
           </TouchableOpacity>
           {actions}
@@ -75,7 +85,7 @@ export function Header({ title, onBack, right, subtitle, logo, settings = true }
             numberOfLines={1}
             adjustsFontSizeToFit
             minimumFontScale={0.7}
-            style={{ color: colors.text, fontSize: 34, fontWeight: '800', letterSpacing: -1 }}
+            style={{ color: colors.text, fontSize: 34, fontFamily: fonts.heading, letterSpacing: -1 }}
           >
             {title}
           </Text>
@@ -93,11 +103,14 @@ export function PageTitle(props) {
   return <Header {...props} />;
 }
 
-export function IconButton({ name, onPress, tint, bg, size = 44 }) {
+// Round icon-only button. `label` is read aloud by screen readers (defaults to the icon name).
+export function IconButton({ name, onPress, tint, bg, size = 44, label }) {
   const { colors } = useTheme();
   return (
     <TouchableOpacity
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label || name}
       style={{ width: size, height: size, borderRadius: size / 2, alignItems: 'center', justifyContent: 'center', backgroundColor: bg || colors.primaryContainer }}
     >
       <Ionicons name={name} size={size * 0.5} color={tint || colors.primary} />
@@ -111,6 +124,33 @@ export function TextAction({ title, onPress, color }) {
     <TouchableOpacity onPress={onPress} style={{ paddingHorizontal: 10, paddingVertical: 8 }}>
       <Txt bold size={16} color={color || colors.primary}>{title}</Txt>
     </TouchableOpacity>
+  );
+}
+
+// Pill-shaped switch between a few options, e.g. Modern | Traditional.
+// options: array of strings. onChange gets the tapped option.
+export function SegmentedControl({ options, value, onChange }) {
+  const { colors } = useTheme();
+  return (
+    <View
+      accessibilityRole="tablist"
+      style={{ flexDirection: 'row', backgroundColor: colors.primaryContainer, borderRadius: 24, padding: 4 }}
+    >
+      {options.map((o) => {
+        const active = o === value;
+        return (
+          <TouchableOpacity
+            key={o}
+            onPress={() => onChange(o)}
+            accessibilityRole="tab"
+            accessibilityState={{ selected: active }}
+            style={{ flex: 1, alignItems: 'center', paddingVertical: 10, borderRadius: 20, backgroundColor: active ? colors.primary : 'transparent' }}
+          >
+            <Txt bold color={active ? colors.onPrimary : colors.primary}>{o}</Txt>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
   );
 }
 
@@ -169,13 +209,13 @@ export function Chip({ label, active, onPress }) {
   );
 }
 
-export function Badge({ label, tone = 'secondary', style }) {
+export function Badge({ label, tone = 'secondary', style, textColor }) {
   const { colors } = useTheme();
   const bg = tone === 'accent' ? colors.accentContainer : tone === 'primary' ? colors.primaryContainer : colors.secondaryContainer;
   const fg = tone === 'secondary' ? colors.onSecondary : tone === 'accent' ? colors.accentText : colors.primary;
   return (
     <View style={[{ backgroundColor: bg, borderRadius: 8, paddingHorizontal: 8, paddingVertical: 4, alignSelf: 'flex-start' }, style]}>
-      <Text style={{ color: fg, fontSize: 10, fontWeight: 'bold' }}>{label}</Text>
+      <Text style={{ color: textColor || fg, fontSize: 10, fontWeight: 'bold' }}>{label}</Text>
     </View>
   );
 }
@@ -300,6 +340,9 @@ export function Swatches({ value, onChange }) {
           <TouchableOpacity
             key={c.name}
             onPress={() => onChange(c.name)}
+            accessibilityRole="button"
+            accessibilityLabel={`Colour ${c.name}`}
+            accessibilityState={{ selected: value === c.name }}
             style={{
               width: 42, height: 42, borderRadius: 21, backgroundColor: c.hex,
               borderWidth: value === c.name ? 3 : 1,
@@ -309,13 +352,16 @@ export function Swatches({ value, onChange }) {
         ))}
         <TouchableOpacity
           onPress={() => setOpen(!open)}
+          accessibilityRole="button"
+          accessibilityLabel="Custom colour"
+          accessibilityState={{ expanded: open }}
           style={{
             width: 42, height: 42, borderRadius: 21, alignItems: 'center', justifyContent: 'center',
             backgroundColor: isCustom ? current : colors.primaryContainer,
             borderWidth: isCustom ? 3 : 1, borderColor: isCustom ? colors.secondary : colors.border,
           }}
         >
-          <Ionicons name="color-palette" size={20} color={isCustom ? '#fff' : colors.primary} />
+          <Ionicons name="color-palette" size={20} color={isCustom ? fixed.white : colors.primary} />
         </TouchableOpacity>
       </View>
 
@@ -346,7 +392,7 @@ export function SwitchRow({ label, hint, value, onChange }) {
         value={!!value}
         onValueChange={onChange}
         trackColor={{ false: colors.border, true: colors.secondary }}
-        thumbColor="#fff"
+        thumbColor={fixed.white}
       />
     </View>
   );
@@ -365,7 +411,7 @@ export function Photo({ uri, style, iconSize = 36, fit = 'cover' }) {
     return (
       <Image
         source={{ uri }}
-        style={[{ backgroundColor: fit === 'contain' ? '#fff' : colors.primaryContainer }, style]}
+        style={[{ backgroundColor: fit === 'contain' ? fixed.white : colors.primaryContainer }, style]}
         resizeMode={fit}
       />
     );
@@ -412,7 +458,7 @@ export function ItemCard({ title, subtitle, uri, essential, badge, selected, onP
         </View>
         {selected ? (
           <View style={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, backgroundColor: colors.scrim, alignItems: 'center', justifyContent: 'center' }}>
-            <Ionicons name="checkmark-circle" size={44} color="#fff" />
+            <Ionicons name="checkmark-circle" size={44} color={fixed.white} />
           </View>
         ) : null}
       </View>
@@ -424,29 +470,32 @@ export function ItemCard({ title, subtitle, uri, essential, badge, selected, onP
   );
 }
 
-// A saved Look: all pieces shown whole, with the name large underneath
-export function LookCard({ look, onPress, onLongPress }) {
+// A saved Look: all pieces shown whole (never cropped), the name large underneath.
+// `label` is the small pill text (e.g. "3 MODERN PIECES"); `children` are action buttons shown below.
+export function LookCard({ look, label, onPress, onLongPress, children }) {
   const { colors } = useTheme();
   const items = look.items || [];
   const shown = items.slice(0, 4);
+  const pill = label || `${items.length} ${items.length === 1 ? 'PIECE' : 'PIECES'}`;
   return (
     <TouchableOpacity
-      activeOpacity={0.85}
+      activeOpacity={onPress || onLongPress ? 0.85 : 1}
       onPress={onPress}
       onLongPress={onLongPress}
+      accessibilityLabel={`Look ${look.name}`}
       style={[
-        { backgroundColor: colors.card, borderRadius: 24, overflow: 'hidden', marginBottom: 16,
+        { backgroundColor: colors.card, borderRadius: 24, overflow: 'hidden', marginTop: 16,
           borderWidth: 1, borderColor: colors.border },
         shadow,
       ]}
     >
-      <View style={{ flexDirection: 'row', height: 190, backgroundColor: '#fff' }}>
+      <View style={{ flexDirection: 'row', height: 200, backgroundColor: fixed.white }}>
         {shown.length === 0 ? (
           <Photo style={{ flex: 1, height: '100%' }} iconSize={44} />
         ) : (
           shown.map((it) => (
             <Photo
-              key={`${it.type}${it.id}`}
+              key={`${it.type}-${it.id}`}
               uri={it.image_uri}
               fit="contain"
               style={{ flex: 1, height: '100%' }}
@@ -455,21 +504,15 @@ export function LookCard({ look, onPress, onLongPress }) {
           ))
         )}
       </View>
-      <View style={{ padding: 16, flexDirection: 'row', alignItems: 'center' }}>
-        <View style={{ flex: 1 }}>
-          <Text style={{ color: colors.text, fontSize: 22, fontWeight: '800', letterSpacing: -0.5 }} numberOfLines={1}>
-            {look.name}
-          </Text>
-          <View
-            style={{ alignSelf: 'flex-start', marginTop: 6, backgroundColor: colors.primary, borderRadius: 12,
-                     paddingHorizontal: 10, paddingVertical: 3 }}
-          >
-            <Text style={{ color: colors.onPrimary, fontSize: 11, fontWeight: 'bold' }}>
-              {items.length} {items.length === 1 ? 'PIECE' : 'PIECES'}
-            </Text>
-          </View>
+      <View style={{ padding: 16 }}>
+        <Txt heading size={24} numberOfLines={1} style={{ letterSpacing: -0.5 }}>{look.name}</Txt>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <Badge label={pill} tone="primary" style={{ backgroundColor: colors.primary }} textColor={colors.onPrimary} />
+          <Txt muted size={12} numberOfLines={1} style={{ flex: 1 }}>
+            {items.map((i) => i.name).join(' · ')}
+          </Txt>
         </View>
-        <Ionicons name="chevron-forward" size={22} color={colors.muted} />
+        {children}
       </View>
     </TouchableOpacity>
   );
@@ -482,31 +525,9 @@ export function EmptyState({ icon = 'shirt-outline', title, text, button, onPres
       <View style={{ width: 88, height: 88, borderRadius: 44, backgroundColor: colors.primaryContainer, alignItems: 'center', justifyContent: 'center' }}>
         <Ionicons name={icon} size={40} color={colors.primary} />
       </View>
-      <Txt bold size={20} style={{ marginTop: 8 }}>{title}</Txt>
+      <Txt heading size={20} style={{ marginTop: 8 }}>{title}</Txt>
       <Txt muted style={{ textAlign: 'center' }}>{text}</Txt>
       {button ? <Button title={button} onPress={onPress} style={{ marginTop: 12 }} /> : null}
-    </View>
-  );
-}
-
-export function SectionTitle({ children, style }) {
-  const { colors } = useTheme();
-  return (
-    <Txt bold size={20} color={colors.primary} style={[{ marginTop: 24, marginBottom: 12 }, style]}>
-      {children}
-    </Txt>
-  );
-}
-
-// Thin band in your palette, like a woven cloth edge
-export function StripeBand({ style }) {
-  const { colors } = useTheme();
-  const bands = [
-    [colors.primary, 3], [colors.accent, 1], [colors.secondary, 2], [colors.accent, 1], [colors.primary, 3],
-  ];
-  return (
-    <View style={[{ flexDirection: 'row', height: 5 }, style]}>
-      {bands.map(([c, f], i) => <View key={i} style={{ flex: f, backgroundColor: c }} />)}
     </View>
   );
 }

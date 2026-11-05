@@ -1,14 +1,21 @@
+// Lists the saved looks (reads outfits + outfit_items through looksDao) with Edit and Delete.
+// Used on its own or inside CollectionsScreen (embedded hides the page title).
 import { useState, useCallback } from 'react';
-import { View, ScrollView, Alert, Text } from 'react-native';
+import { ScrollView, View, Alert } from 'react-native';
 import { useSQLiteContext } from 'expo-sqlite';
 import { useFocusEffect } from '@react-navigation/native';
 import { auth } from '../firebase';
-import { getLooks, deleteLook } from '../database/looksDao';
-import { Screen, PageTitle, Card, Txt, Button, Photo, EmptyState } from '../components/UI';
-import { useTheme } from '../theme';
+import { getLooks, deleteLook, lookKind, isMixedLook } from '../database/looksDao';
+import { Screen, PageTitle, Button, EmptyState, LookCard } from '../components/UI';
+
+// "3 MODERN PIECES", "2 TRADITIONAL PIECES", or a warning for old looks that hold both kinds
+function labelOf(items) {
+  if (isMixedLook(items)) return `${items.length} MIXED · EDIT TO FIX`;
+  const kind = (lookKind(items) || '').toUpperCase();
+  return `${items.length} ${kind} ${items.length === 1 ? 'PIECE' : 'PIECES'}`.replace('  ', ' ');
+}
 
 export default function LooksScreen({ navigation, embedded }) {
-  const { colors } = useTheme();
   const db = useSQLiteContext();
   const [looks, setLooks] = useState([]);
 
@@ -41,46 +48,12 @@ export default function LooksScreen({ navigation, embedded }) {
           />
         ) : (
           looks.map((look) => (
-            <Card key={look.id} style={{ marginTop: 16, padding: 0, overflow: 'hidden', borderRadius: 24 }}>
-              {/* Whole garments, never cropped */}
-              <View style={{ flexDirection: 'row', height: 200, backgroundColor: '#fff' }}>
-                {look.items.length === 0 ? (
-                  <Photo style={{ flex: 1, height: '100%' }} iconSize={44} />
-                ) : (
-                  look.items.slice(0, 4).map((it) => (
-                    <Photo
-                      key={`${it.type}-${it.id}`}
-                      uri={it.image_uri}
-                      fit="contain"
-                      style={{ flex: 1, height: '100%' }}
-                      iconSize={28}
-                    />
-                  ))
-                )}
+            <LookCard key={look.id} look={look} label={labelOf(look.items)}>
+              <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
+                <Button title="Edit" variant="soft" style={{ flex: 1, height: 44 }} onPress={() => navigation.navigate('LookEditor', { lookId: look.id })} />
+                <Button title="Delete" variant="danger" style={{ flex: 1, height: 44 }} onPress={() => confirmDelete(look)} />
               </View>
-
-              <View style={{ padding: 16 }}>
-                {/* The look's name, large and bold */}
-                <Text style={{ color: colors.text, fontSize: 24, fontWeight: '800', letterSpacing: -0.5 }} numberOfLines={1}>
-                  {look.name}
-                </Text>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                  <View style={{ backgroundColor: colors.primary, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 3 }}>
-                    <Text style={{ color: colors.onPrimary, fontSize: 11, fontWeight: 'bold' }}>
-                      {look.items.length} {look.items.length === 1 ? 'PIECE' : 'PIECES'}
-                    </Text>
-                  </View>
-                  <Txt muted size={12} numberOfLines={1} style={{ flex: 1 }}>
-                    {look.items.map((i) => i.name).join(' · ')}
-                  </Txt>
-                </View>
-
-                <View style={{ flexDirection: 'row', gap: 10, marginTop: 16 }}>
-                  <Button title="Edit" variant="soft" style={{ flex: 1, height: 44 }} onPress={() => navigation.navigate('LookEditor', { lookId: look.id })} />
-                  <Button title="Delete" variant="danger" style={{ flex: 1, height: 44 }} onPress={() => confirmDelete(look)} />
-                </View>
-              </View>
-            </Card>
+            </LookCard>
           ))
         )}
       </ScrollView>

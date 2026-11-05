@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { migrate } from './src/database/migrate';
 import { useFonts, Fraunces_600SemiBold } from '@expo-google-fonts/fraunces';
-import { ActivityIndicator, Alert, TouchableOpacity, View } from 'react-native';
+import { Alert, TouchableOpacity, View } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { NavigationContainer, DefaultTheme, useNavigation } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
@@ -149,7 +149,13 @@ function MainApp() {
 }
 
 function Root() {
-  const [fontsLoaded] = useFonts({ Fraunces_600SemiBold });
+  // Loads the title font. The key ('Fraunces_600SemiBold') is the fontFamily name used in
+  // theme.js (fonts.heading). fontError is checked too: if the font fails to load we still open
+  // the app (system font) instead of leaving the splash screen up forever, and say why in the log.
+  const [fontsLoaded, fontError] = useFonts({ Fraunces_600SemiBold });
+  useEffect(() => {
+    if (fontError) console.warn('Fraunces font failed to load, using the system font:', fontError);
+  }, [fontError]);
   const { colors, dark } = useTheme();
   const [user, setUser] = useState(null);
   const [checking, setChecking] = useState(true);
@@ -170,7 +176,7 @@ function Root() {
   return (
     <>
       <StatusBar style={dark ? 'light' : 'dark'} />
-      {!splashDone || checking || !fontsLoaded ? (
+      {!splashDone || checking || !(fontsLoaded || fontError) ? (
         <AnimatedSplash />
       ) : user ? (
         <MainApp />
